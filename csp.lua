@@ -175,6 +175,7 @@ csp.conway=function()
   end)
 end
 
+---
 -- 4. Subroutines and Data Representations
 --
 -- "A coroutine acting as a subroutine is a process operating
@@ -183,6 +184,7 @@ end
 -- a pair of commands: subr!(arguments); ...; subr?(results). Any commands
 -- between these two will be executed concurrently with the subroutine."
 
+---
 -- 4.1  Function: Division With Remainder
 --
 -- Problem: 
@@ -210,7 +212,7 @@ csp.div=function()
   end)
 end
 
--- 4.2 Recursion: Factorial
+--- 4.2 Recursion: Factorial
 --
 -- Problem:
 -- Compute a factorial by the recursive method, to a given limit.
@@ -253,5 +255,72 @@ csp.fac=function(limit)
   end)()
 return fac[0]
 end
+
+---
+-- 4.2 - Small Set of Integers
+--
+-- To represent a set of not more than 100 integers as a process, 
+-- S, which accepts two kinds of instruction from its calling 
+-- process X: (1) S!insert(n), insert the integer n in the set, and 
+-- (2) S!has(n); ... ; S?b, b is set true if n is in the set, and
+-- false otherwise. The initial value of the set is empty. 
+--
+-- Solution: 
+--
+-- S:: 
+-- content:(0..99)integer; size:integer; size = 0; 
+-- *[n:integer;X?has(n) --> SEARCH;X!(i < size) 
+--  [n:integer; X?insert(n) --> SEARCH;
+--      [i < size --> skip
+--      [i = size; size < 100 --> 
+--          content (size) = n; size = size + l ]
+--      ]
+-- ]
+--
+-- where SEARCH is an abbreviation for: 
+-- i:integer; i = 0; 
+-- *[i < size; content(size) ~= n; i = i + 1] 
+--
+-- Notes: (1) The alternative command with guard "size < 100" 
+-- will fail if an attempt is made to insert more than 100
+-- elements. (2) The activity of insertion will in general 
+-- take place concurrently with the calling process. 
+-- However, any subsequent instruction to S will be delayed
+-- until the previous insertion is complete. 
+
+csp.intset=function(limit)
+  local content={}
+  
+  local search=function(n)
+      local size=#content
+      for i=1,size do
+        if content[i]==n then return i-1 end
+      end
+      return size
+  end
+  
+  local chan=clp.channel(0)
+  local p=clp.process(function(op,n)
+    local size=#content
+    if op == 'has' then
+      chan:put(search(n) < size)
+    elseif op == 'insert' and size <= limit then
+      if search(n) < size then --skip
+      else
+        content[size + 1]=n
+      end
+    end
+  end)
+  return {
+    has=function(n)
+      p('has',n)
+      return chan:get()
+    end,
+    insert=function(n)
+      p('insert',n)
+    end
+  }
+end
+
 
 return csp

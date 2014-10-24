@@ -122,3 +122,19 @@ print('4 - Subroutines and Data Representations')
 local res=csp.fac(16)
 res:put(16)
 print('4.1 - Factorial\t',res:get()==20922789888000 and "passed" or "failed")
+
+
+
+local set=csp.intset(6) -- up to 6 integers
+set.insert(10) set.insert(42) set.insert(3) set.insert(21) set.insert(98)
+set.insert(10)
+set.insert(10)
+set.insert(10)
+set.insert(10)
+set.insert(10)
+set.insert(10)
+set.insert(10)
+set.insert(10)
+set.insert(10)
+print('4.2 - Intset\t',
+   assert(set.has(10)==true) and assert(set.has(9)==false) and assert(set.has(42)==true) and "passed" or "failed")
